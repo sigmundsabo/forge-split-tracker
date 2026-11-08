@@ -171,11 +171,20 @@ select:focus-visible,
   border-radius: var(--r-xl);
   color: var(--text);
   text-align: left;
+  /* A kártya a saját színében áll, és egy lágy sötét folt ül a közepén:
+     a szín így a felső és az alsó élen is megmarad, a szöveg mögött viszont
+     sötét a háttér. A folt ellipszise a kártya arányaihoz igazodik. */
   background:
-    radial-gradient(135% 105% at 50% -12%,
-      color-mix(in srgb, var(--tint) 62%, transparent) 0%,
-      color-mix(in srgb, var(--tint) 20%, transparent) 38%,
-      rgba(15, 15, 17, 0) 74%),
+    radial-gradient(116% 52% at 50% 48%,
+      rgba(9, 9, 11, 0.98) 0%,
+      rgba(9, 9, 11, 0.96) 38%,
+      rgba(9, 9, 11, 0.72) 66%,
+      rgba(9, 9, 11, 0.24) 87%,
+      rgba(9, 9, 11, 0) 100%),
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--tint) 84%, transparent) 0%,
+      color-mix(in srgb, var(--tint) 64%, transparent) 50%,
+      color-mix(in srgb, var(--tint) 78%, transparent) 100%),
     #0F0F11;
   transition: transform 160ms ease-out;
 }

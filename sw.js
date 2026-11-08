@@ -5,7 +5,7 @@
    A VERSION-t kézzel kell emelni, ha a váz fájljai változnak:
    új érték = új cache, a régi az aktiválásnál törlődik. */
 
-const VERSION = 'forge-v3';
+const VERSION = 'forge-v4';
 const SHELL = `${VERSION}-shell`;
 const RUNTIME = `${VERSION}-runtime`;
 
