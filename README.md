@@ -6,6 +6,15 @@ izomcsoport-tracker és külön „össz súly" bejegyzés. Telefonra tervezve, 
 A split nincs naphoz kötve: a négy edzés önálló kártya, bármelyik bármikor indítható.
 Edzésidő-becslés szándékosan nincs sehol.
 
+## Élő
+
+https://forge-split-tracker.netlify.app — demó fiók: `demo@forge.hu` / `forge1234`
+
+A netlify.app ingyenes domainen a „Powered by Netlify" jelvény a jobb alsó sarokban
+ül, és elfogja a koppintást az alatta lévő felületen. Ezért ezen a gazdagépen a
+navigáció feljebb csúszik (`:root[data-nl-badge]`); saját domainen vagy a
+kezdőképernyőről indítva nincs jelvény, és a sáv a helyén marad.
+
 ## Mi ez
 
 Statikus frontend — nincs build lépés, nincs szerver, nincs hálózati hívás.
