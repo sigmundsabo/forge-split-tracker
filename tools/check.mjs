@@ -153,6 +153,23 @@ async function fullSuite() {
     await assertHidden(page.getByTestId('rest'), 'pihenő sáv');
   });
 
+  await check('a naplózóban nincs navigáció, és a pihenősáv a képernyő alján marad', async (page) => {
+    await login(page);
+    await page.getByTestId('card-upper').click();
+    await page.locator('#d_pullover-1').check();
+    await assertVisible(page.getByTestId('rest'), 'pihenő sáv');
+
+    if (!(await page.locator('#nav').isHidden())) {
+      throw new Error('a naplózóban nem kellene lenti navigáció');
+    }
+    /* a sávnak nem szabad a hiányzó navigáció helyét kihagynia maga alatt */
+    const gap = await page.evaluate(() => {
+      const box = document.querySelector('[data-testid="rest"]').getBoundingClientRect();
+      return Math.round(window.innerHeight - box.bottom);
+    });
+    if (gap > 40) throw new Error(`a pihenősáv ${gap} px-rel a képernyő alja fölött lóg`);
+  });
+
   await check('a legjobb szett túllépése rekordjelet kap', async (page) => {
     await login(page);
     await page.getByTestId('card-upper').click();

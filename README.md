@@ -10,10 +10,10 @@ Edzésidő-becslés szándékosan nincs sehol.
 
 https://forge-split-tracker.netlify.app — demó fiók: `demo@forge.hu` / `forge1234`
 
-A netlify.app ingyenes domainen a „Powered by Netlify" jelvény a jobb alsó sarokban
-ül, és elfogja a koppintást az alatta lévő felületen. Ezért ezen a gazdagépen a
-navigáció feljebb csúszik (`:root[data-nl-badge]`); saját domainen vagy a
-kezdőképernyőről indítva nincs jelvény, és a sáv a helyén marad.
+A Netlify korábban egy lebegő „Powered by Netlify" jelvényt tett a jobb alsó sarokba,
+ami elfogta a koppintást a navigáció fölött — emiatt volt egy `data-nl-badge` kerülőút.
+A jelvény helyére 2026 novemberére egy HTML-megjegyzés került, így a kerülőút kikerült
+a kódból. Ha a jelvény visszatérne, a navigációt megint meg kell emelni ezen a domainen.
 
 ## Mi ez
 
@@ -84,9 +84,10 @@ bemelegítő kizárása az effektív sorozatból, rekordjelzés, előtöltés,
 progressziójavaslat, offline indulás a service workerrel, összegző, izomcsoport-számok
 (7 és 30 napra), az össz súly különállása, regisztráció, profilmentés és a beállítások
 megmaradása, kg/lbs átszámítás, a fióktörlés teljes útja, valamint a vízszintes
-csúszás, a 44 pixeles érintőfelületek és a konzolhibák ellenőrzése.
+csúszás, a 44 pixeles érintőfelületek, a konzolhibák és a naplózó alsó sávja
+(nincs üres navigáció, a pihenősáv a képernyő alján marad).
 
-Utolsó futás: **34/34 rendben**.
+Utolsó futás: **35/35 rendben**.
 
 A `npm run check` akkor is megy, ha a Playwright test-runner nem tud elindulni a
 környezetben (sandbox, zárt CI) — csak böngészőt indít, saját kiszolgálóval.

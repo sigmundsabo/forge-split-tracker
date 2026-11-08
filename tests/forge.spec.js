@@ -76,6 +76,22 @@ test('szett rögzítése elindítja a pihenőt és számolja a kész szetteket',
   await expect(page.getByTestId('rest')).toBeHidden();
 });
 
+test('a naplózóban nincs navigáció, és a pihenősáv a képernyő alján marad', async ({ page }) => {
+  await login(page);
+  await page.getByTestId('card-upper').click();
+  await page.locator('#d_pullover-1').check();
+
+  await expect(page.getByTestId('rest')).toBeVisible();
+  await expect(page.locator('#nav')).toBeHidden();
+
+  /* a sávnak nem szabad a hiányzó navigáció helyét kihagynia maga alatt */
+  const gap = await page.evaluate(() => {
+    const box = document.querySelector('[data-testid="rest"]').getBoundingClientRect();
+    return Math.round(window.innerHeight - box.bottom);
+  });
+  expect(gap).toBeLessThanOrEqual(40);
+});
+
 test('a súly/ismétlés túllépése rekordjelet kap', async ({ page }) => {
   await login(page);
   await page.getByTestId('card-upper').click();

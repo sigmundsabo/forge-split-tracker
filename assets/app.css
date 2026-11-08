@@ -447,9 +447,10 @@ select:focus-visible,
 /* a .rest display:flex-je erősebb a UA [hidden] szabályánál, ezért kell ez a sor */
 .rest[hidden] { display: none; }
 
+/* a naplózóban nincs lenti navigáció, így a pihenősáv a képernyő aljára tapad */
 .rest {
   position: sticky;
-  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
+  bottom: calc(var(--s3) + env(safe-area-inset-bottom));
   z-index: 5;
   display: flex;
   align-items: center;
@@ -476,6 +477,10 @@ select:focus-visible,
 .bar-val { display: flex; align-items: center; justify-content: flex-end; gap: var(--s1); font-size: var(--fs-label); font-weight: 600; font-variant-numeric: tabular-nums; }
 
 /* ---------- nav ---------- */
+/* a .nav display:grid-je erősebb a UA [hidden] szabályánál, ezért kell ez a sor:
+   enélkül a naplózóban és a fióktörlésnél üres sáv maradna a képernyő alján */
+.nav[hidden] { display: none; }
+
 .nav {
   position: fixed;
   inset-inline: 0;
@@ -506,13 +511,6 @@ select:focus-visible,
   letter-spacing: 0.06em;
 }
 .nav a[aria-current="page"] { color: var(--accent); }
-
-/* A netlify.app ingyenes domainen a "Powered by Netlify" jelvény a jobb alsó
-   sarokban ül, és elfogja a koppintást a navigáció két jobb oldali fülén.
-   Ott felemeljük a sávot; saját domainen vagy telepített appként nincs jelvény,
-   és ez a szabály nem él. */
-:root[data-nl-badge] { --nav-h: 140px; }
-:root[data-nl-badge] .nav { padding-bottom: calc(var(--s3) + 68px + env(safe-area-inset-bottom)); }
 
 /* ---------- misc ---------- */
 .notice {
