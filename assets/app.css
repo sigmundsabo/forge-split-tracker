@@ -457,6 +457,13 @@ select:focus-visible,
 }
 .nav a[aria-current="page"] { color: var(--accent); }
 
+/* A netlify.app ingyenes domainen a "Powered by Netlify" jelvény a jobb alsó
+   sarokban ül, és elfogja a koppintást a navigáció két jobb oldali fülén.
+   Ott felemeljük a sávot; saját domainen vagy telepített appként nincs jelvény,
+   és ez a szabály nem él. */
+:root[data-nl-badge] { --nav-h: 140px; }
+:root[data-nl-badge] .nav { padding-bottom: calc(var(--s3) + 68px + env(safe-area-inset-bottom)); }
+
 /* ---------- misc ---------- */
 .notice {
   display: flex;

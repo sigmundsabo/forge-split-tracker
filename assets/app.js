@@ -1058,6 +1058,11 @@ function render() {
 
 window.addEventListener('hashchange', render);
 
+/* a netlify.app jelvénye a jobb alsó sarkot fedi — ott feljebb tesszük a navigációt */
+if (location.hostname.endsWith('.netlify.app')) {
+  document.documentElement.setAttribute('data-nl-badge', '');
+}
+
 seedDemo().then(() => {
   if (!location.hash) location.hash = store.current() ? '#/split' : '#/login';
   render();
