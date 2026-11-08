@@ -10,32 +10,34 @@ Sorrend: amitől ténylegesen jobb lesz az edzés közbeni használat, nem ami s
 - Előző szett előtöltése gyakorlatonként (Liftoff)
 - Előző heti súly és ismétlés a mező halvány alapértékeként
 - Fióktörlés megerősítéssel, CSV-exporttal, 30 napos visszaállítással
+- **Szettípus-jelölés** — a szett számára koppintva normál → B (bemelegítő) →
+  D (drop) → K (kudarcig). A bemelegítő nem számít effektív sorozatba, nem lehet
+  rekord, és rövidebb pihenőt indít. Az összegző külön kiírja, mennyi volt belőle.
+- **Offline működés** — service worker tartja a vázat és a betűket, így térerő
+  nélkül is elindul. A napló amúgy is a telefonon van.
+- **Jelzés a pihenő végén** — három rövid hang és rezgésminta, plusz rövid rezgés
+  a szett pipálásakor. Mellé a kijelző ébren tartása edzés közben (Wake Lock).
+  Mindkettő kikapcsolható a profilban.
+- **Progressziójavaslat** — ha múltkor minden szett elérte az ismétléssáv felső
+  értékét, a gyakorlat fejlécében megjelenik a +2,5 kg javaslat, egy „Kitölt"
+  gombbal, ami be is írja a sáv alsó ismétlésszámával.
 
-## Top 5 — ezt vinném tovább
+## Következő — ezt vinném tovább
 
-### 1. Bemelegítő szettek jelölése
-Szettenként `W` (warmup) / `D` (drop) / `F` (failure) jelölés, mint Hevyben.
-A bemelegítő **kimarad az effektív sorozatból** — ez egy csapásra pontosabbá teszi a
-trackert, mert most minden szett egyenlően számol. Kis UI, nagy adatjavulás.
-
-### 2. Offline működés (service worker)
-A konditeremben gyakran nincs térerő, az app meg hálózatról töltődik. A manifest már
-megvan; egy cache-first service worker kell, és telepítve, repülőgép-módban is megy.
-
-### 3. Haptika és hang
-`navigator.vibrate()` a szett pipálásakor, rövid jelzés a pihenő végén. Edzés közben a
-telefon a zsebben vagy a padon van — a néma visszaszámláló használhatatlan.
-Mellé: `Screen Wake Lock`, hogy ne aludjon el a kijelző két szett között.
-
-### 4. Progressziójavaslat
-Ha az előző alkalommal minden szettben elérted az ismétlésintervallum felső értékét,
-a mező alapértéke `+2,5 kg` legyen, egy magyarázó sorral. Ez a dupla progresszió
-automatizálása — a legtöbb tracker ezt nem csinálja meg helyetted.
-
-### 5. Import Hevyből / Strongból (CSV)
+### 1. Import Hevyből / Strongból (CSV)
 Az „össz súly" mező egy kerülőút arra, hogy a felhasználónak van előtörténete.
 A valódi válasz: töltse be a régi naplóját, és onnantól igazi rekordjai és trendjei
-lesznek. Ugyanaz a CSV-séma, amit most exportálunk.
+lesznek. Ugyanaz a CSV-séma, amit most exportálunk — a szettípus oszloppal együtt.
+
+### 2. A tracker a naplóból is számoljon
+A radar ma a split *tervét* mutatja (heti 13,5 effektív sorozat mellre).
+Mellé kellene egy „Napló" mód: mennyi jött össze tényleg az elmúlt 7 vagy 30 napban,
+bemelegítő nélkül. A szettípus-jelölés már megvan hozzá, az adat is — csak a nézet
+hiányzik. Ettől lesz a bemelegítő-jelölés igazán hasznos.
+
+### 3. Progresszió visszafelé is
+Ma csak felfelé javaslunk. Ha két egymást követő alkalommal sem jött össze a sáv alja,
+jelezze, és ajánljon deloadot — ez az, ami megóv a megrekedéstől.
 
 ## Naplózás
 
@@ -59,7 +61,6 @@ lesznek. Ugyanaz a CSV-séma, amit most exportálunk.
 - Sávon **felüli** jelzés is — most csak a cél alattit mutatjuk
 - Az előző négy hét radarja szellemvonalként a mostani alatt
 - Konkrét javaslat: „a has 3 effektív sorozatnál áll, tegyél +2 szettet a Lowerbe"
-- Bemelegítő szettek kizárása (lásd 1. pont)
 
 ## Fiók és adat
 

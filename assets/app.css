@@ -358,14 +358,64 @@ select:focus-visible,
 .set-head,
 .set {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) minmax(0, 1fr) 26px 44px;
+  grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1fr) 26px 44px;
   gap: var(--s2);
   align-items: center;
 }
+.set-head span:first-child { padding-left: var(--s3); }
 .set-head { margin-top: var(--s3); }
 .set-head span { font-size: var(--fs-micro); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
 .set { margin-top: var(--s2); }
-.set__no { font-size: var(--fs-label); font-weight: 600; color: var(--dim); font-variant-numeric: tabular-nums; }
+
+/* a szett száma egyben a típusjelölő: koppintásra normál → B → D → K */
+.set__no {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--dim);
+  font: inherit;
+  font-size: var(--fs-label);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.set__no:hover { border-color: var(--line-2); color: var(--text-2); }
+.set__no[data-t="b"] { border-color: rgba(138, 143, 224, 0.45); background: rgba(138, 143, 224, 0.12); color: #9FA4E8; }
+.set__no[data-t="d"] { border-color: rgba(235, 211, 174, 0.45); background: rgba(235, 211, 174, 0.12); color: var(--anterior); }
+.set__no[data-t="k"] { border-color: rgba(221, 130, 150, 0.45); background: rgba(221, 130, 150, 0.12); color: var(--posterior); }
+
+/* bemelegítőnél halványabb a sor: nem számít effektív sorozatba */
+.set--warmup .set__in { opacity: 0.72; }
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s1) var(--s3);
+  padding: var(--s3) var(--s4);
+  border: 1px dashed #2B2B30;
+  border-radius: var(--r-md);
+  font-size: var(--fs-label);
+  color: var(--dim);
+}
+.legend b { color: var(--text-2); font-weight: 600; }
+
+/* progressziójavaslat a gyakorlat fejlécében */
+.sugg {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin-top: var(--s3);
+  padding: var(--s2) var(--s3);
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+.sugg p { flex: 1; min-width: 0; font-size: var(--fs-label); color: var(--text-2); }
+.sugg strong { color: var(--text); font-weight: 600; }
+.sugg .chip { flex: none; }
 .set__in {
   width: 100%;
   min-height: 44px;

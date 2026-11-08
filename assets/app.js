@@ -44,6 +44,7 @@ const I = {
   user: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="6.6" r="3.2" stroke="currentColor" stroke-width="1.5"/><path d="M3.8 17c.6-3.3 3.1-5 6.2-5s5.6 1.7 6.2 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
   star: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.8 9.9 5.7l4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6L8 1.8Z" fill="currentColor"/></svg>',
   down: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 2.4v7.2m0 0L3 6.8m3 2.8 3-2.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  up: '<svg width="13" height="13" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 9.6V2.4m0 0L3 5.2M6 2.4l3 2.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   plus: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 3.4v9.2M3.4 8h9.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   trash: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.4 5.2h9.2l-.7 8a1.6 1.6 0 0 1-1.6 1.45H5.7A1.6 1.6 0 0 1 4.1 13.2l-.7-8Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M2 5.2h12M6.3 5.2V3.5A1.2 1.2 0 0 1 7.5 2.3h1a1.2 1.2 0 0 1 1.2 1.2v1.7M6.8 8v4M9.2 8v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
   dl: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 2.4v7.4m0 0 3-2.9m-3 2.9L5 6.9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.6 11.6v.8a1.6 1.6 0 0 0 1.6 1.6h7.6a1.6 1.6 0 0 0 1.6-1.6v-.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
@@ -81,7 +82,19 @@ const write = (key, value) => {
 };
 const drop = (key) => { try { localStorage.removeItem(key); } catch { /* ignore */ } };
 
-const blankData = () => ({ sessions: [], totals: [], prefs: { autoRest: true, prBadges: true, prefill: true } });
+const DEFAULT_PREFS = {
+  autoRest: true,
+  prBadges: true,
+  prefill: true,
+  progression: true,
+  alert: true,
+  wake: true
+};
+
+const blankData = () => ({ sessions: [], totals: [], prefs: { ...DEFAULT_PREFS } });
+
+/* a régebbi mentésekben még nincs minden beállítás — az alapértékekkel töltjük fel */
+const prefsOf = (data) => ({ ...DEFAULT_PREFS, ...(data.prefs || {}) });
 
 const store = {
   users: () => read(K_USERS, {}),
@@ -133,7 +146,16 @@ const unitOf = (u) => (u?.unit === 'lbs' ? 'lbs' : 'kg');
 const toDisp = (kg, unit) => (unit === 'lbs' ? Math.round(kg * KG_PER_LB * 10) / 10 : kg);
 const toKg = (val, unit) => (unit === 'lbs' ? Math.round((val / KG_PER_LB) * 10) / 10 : val);
 
-/* ------------------------------------------------------------- sessions */
+/* ------------------------------------------------- szettípusok és előzmény */
+
+/* 'n' normál · 'b' bemelegítő · 'd' drop · 'k' kudarcig
+   A bemelegítő nem számít effektív sorozatba, és nem lehet rekord sem. */
+const SET_TYPES = ['n', 'b', 'd', 'k'];
+const TYPE_LABEL = { n: '', b: 'B', d: 'D', k: 'K' };
+const TYPE_NAME = { n: 'normál', b: 'bemelegítő', d: 'drop', k: 'kudarcig' };
+
+const isWarmup = (set) => set.t === 'b';
+const counts = (set) => set.done && !isWarmup(set);
 
 /* egy gyakorlat eddigi legjobbja: a demó `prev` és a mentett edzések közül */
 function bestFor(data, workoutId, exId, fallbackPrev) {
@@ -144,21 +166,119 @@ function bestFor(data, workoutId, exId, fallbackPrev) {
   data.sessions
     .filter((s) => s.workout === workoutId)
     .forEach((s) => (s.sets || []).forEach((set) => {
-      if (set.ex !== exId || !set.done) return;
+      if (set.ex !== exId || !counts(set)) return;
       if (set.w > best.w || (set.w === best.w && set.r > best.r)) best = { w: set.w, r: set.r };
     }));
   return best;
 }
 
-/* legutóbbi mentett szettek egy gyakorlathoz, különben a demó `prev` */
+/* legutóbbi mentett szettek egy gyakorlathoz, különben a demó `prev`.
+   A bemelegítők kimaradnak: nem azokhoz képest progresszálunk. */
 function lastFor(data, workoutId, exId, fallbackPrev) {
   const prior = data.sessions
-    .filter((s) => s.workout === workoutId && (s.sets || []).some((x) => x.ex === exId && x.done))
+    .filter((s) => s.workout === workoutId && (s.sets || []).some((x) => x.ex === exId && counts(x)))
     .slice(-1)[0];
   if (!prior) return fallbackPrev;
-  const rows = prior.sets.filter((x) => x.ex === exId && x.done).map((x) => [x.w, x.r]);
+  const rows = prior.sets.filter((x) => x.ex === exId && counts(x)).map((x) => [x.w, x.r]);
   return rows.length ? rows : fallbackPrev;
 }
+
+/* ------------------------------------------------------ progressziójavaslat */
+
+/* '3×8–10' → { sets: 3, min: 8, max: 10 } */
+function repRange(scheme) {
+  const m = /(\d+)\s*×\s*(\d+)(?:\s*[–-]\s*(\d+))?/.exec(scheme || '');
+  if (!m) return null;
+  return { sets: Number(m[1]), min: Number(m[2]), max: Number(m[3] || m[2]) };
+}
+
+/* Dupla progresszió: ha múltkor minden szett elérte az ismétléssáv felső
+   értékét, legyen +2,5 kg a sáv alsó értékénél. */
+const STEP_KG = 2.5;
+
+function suggestFor(data, workoutId, ex) {
+  const range = repRange(ex.scheme);
+  if (!range) return null;
+  const last = lastFor(data, workoutId, ex.id, ex.prev);
+  if (!last.length) return null;
+  if (!last.every(([, reps]) => reps >= range.max)) return null;
+  const top = Math.max(...last.map(([kg]) => kg));
+  if (!Number.isFinite(top) || top <= 0) return null;
+  return { kg: top + STEP_KG, reps: range.min, done: last.length, hit: range.max };
+}
+
+/* ------------------------------------------------- rezgés, hang, kijelző */
+
+/* Edzés közben a telefon a padon vagy a zsebben van: a néma visszaszámláló
+   használhatatlan. A hangot csak felhasználói koppintás után lehet elindítani,
+   ezért a szett pipálásakor nyitjuk meg az AudioContextet. */
+const buzz = {
+  audio: null,
+
+  prime() {
+    if (this.audio) return;
+    const Ctor = window.AudioContext || window.webkitAudioContext;
+    if (!Ctor) return;
+    try { this.audio = new Ctor(); } catch { this.audio = null; }
+  },
+
+  vibrate(pattern) {
+    try { navigator.vibrate?.(pattern); } catch { /* nem támogatott */ }
+  },
+
+  /* rövid visszajelzés a szett pipálásakor */
+  tick(on) {
+    if (!on) return;
+    this.prime();
+    this.vibrate(12);
+  },
+
+  /* a pihenő végén: három rövid hang és egy rezgésminta */
+  async ring(on) {
+    if (!on) return;
+    this.vibrate([130, 70, 130, 70, 130]);
+    const ctx = this.audio;
+    if (!ctx) return;
+    try {
+      if (ctx.state === 'suspended') await ctx.resume();
+      [0, 0.2, 0.4].forEach((at, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = i === 2 ? 1046 : 784;
+        const t = ctx.currentTime + at;
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.16, t + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.18);
+      });
+    } catch { /* a hang nem létfontosságú */ }
+  }
+};
+
+/* A kijelző ne aludjon el két szett között. A rendszer bármikor elveheti,
+   ezért a lap visszatérésekor újra kérjük. */
+let wakeLock = null;
+let wakeWanted = false;
+
+async function keepAwake(on) {
+  wakeWanted = Boolean(on);
+  if (!wakeWanted || !('wakeLock' in navigator)) return;
+  if (wakeLock && !wakeLock.released) return;
+  try { wakeLock = await navigator.wakeLock.request('screen'); } catch { wakeLock = null; }
+}
+
+function letSleep() {
+  wakeWanted = false;
+  try { wakeLock?.release(); } catch { /* már elengedte */ }
+  wakeLock = null;
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && wakeWanted) keepAwake(true);
+});
 
 /* ------------------------------------------------------------------ nav */
 
@@ -366,21 +486,24 @@ views.workout = (u, id) => {
   const w = byId(id);
   if (!w) { go('#/split'); return; }
   const data = store.data(u.email);
-  const prefs = data.prefs || blankData().prefs;
+  const prefs = prefsOf(data);
   const unit = unitOf(u);
-  const log = {}; // key -> { w, r, done }
+  const log = {}; // key -> { w, r, done, t }
   let rest = 0, restTotal = 0, ticker = null;
 
   const key = (exId, i) => `${exId}-${i + 1}`;
 
   const body = w.exercises.map((ex, i) => {
     const last = lastFor(data, w.id, ex.id, ex.prev);
+    const sugg = prefs.progression ? suggestFor(data, w.id, ex) : null;
     const rows = ex.prev.map((_, si) => {
       const k = key(ex.id, si);
       const p = last[si] || last[last.length - 1] || [0, 0];
       return `
       <div class="set" data-row="${k}">
-        <span class="set__no">${si + 1}</span>
+        <button class="set__no" type="button" data-t="n" data-type-btn="${k}"
+                aria-label="${esc(ex.name)} ${si + 1}. szett típusa: normál. Koppints a jelöléshez."
+                data-testid="type-${k}">${si + 1}</button>
         <input class="set__in" type="number" inputmode="decimal" step="0.5" min="0"
                name="w_${ex.id}_${si + 1}" data-k="${k}" data-f="w"
                placeholder="${hu(toDisp(p[0], unit))}"
@@ -407,6 +530,12 @@ views.workout = (u, id) => {
         </div>
         ${prefs.prefill ? `<button class="chip" type="button" data-prefill="${ex.id}" data-testid="prefill-${ex.id}">Előző</button>` : ''}
       </div>
+      ${sugg ? `
+      <div class="sugg" data-testid="sugg-${ex.id}">
+        <span aria-hidden="true" style="flex:none;color:var(--accent)">${I.up}</span>
+        <p>Javaslat <strong class="num">${hu(toDisp(sugg.kg, unit))} ${unit}</strong> — múltkor mind a ${sugg.done} szett ${sugg.hit} ismétlés volt.</p>
+        <button class="chip" type="button" data-sugg="${ex.id}" data-testid="sugg-fill-${ex.id}">Kitölt</button>
+      </div>` : ''}
       <div class="set-head" aria-hidden="true">
         <span>#</span><span>${unit}</span><span>ism.</span><span></span><span></span>
       </div>
@@ -423,8 +552,16 @@ views.workout = (u, id) => {
 
     <div>
       <h1 class="display" style="text-transform:uppercase">${w.name}</h1>
-      <p class="meta num" style="margin-top:var(--s2)" data-testid="wo-meta">${setCount(w)} szett · <span data-testid="wo-done">0</span> kész</p>
+      <p class="meta num" style="margin-top:var(--s2)" data-testid="wo-meta">${setCount(w)} szett · <span data-testid="wo-done">0</span> kész · <span data-testid="wo-eff">0</span> effektív</p>
     </div>
+
+    <p class="legend">
+      <span>A szett számára koppintva jelölhetsz:</span>
+      <span><b>B</b> bemelegítő</span>
+      <span><b>D</b> drop</span>
+      <span><b>K</b> kudarcig</span>
+      <span>A bemelegítő nem számít effektív sorozatba, és nem lehet rekord.</span>
+    </p>
 
     <div style="display:flex;flex-direction:column;gap:var(--s3)">${body}</div>
 
@@ -460,14 +597,17 @@ views.workout = (u, id) => {
     if (ticker) clearInterval(ticker);
     ticker = setInterval(() => {
       rest -= 1;
-      if (rest <= 0) { $('[data-testid="rest-sr"]').textContent = 'Pihenő letelt.'; }
+      if (rest <= 0) {
+        $('[data-testid="rest-sr"]').textContent = 'Pihenő letelt.';
+        buzz.ring(prefs.alert);
+      }
       paintRest();
     }, 1000);
   }
 
   $('[data-skip]').addEventListener('click', () => { rest = 0; paintRest(); });
 
-  function cell(k) { return { ...{ w: NaN, r: NaN, done: false }, ...(log[k] || {}) }; }
+  function cell(k) { return { ...{ w: NaN, r: NaN, done: false, t: 'n' }, ...(log[k] || {}) }; }
 
   function paintPR(exId, si) {
     const ex = w.exercises.find((x) => x.id === exId);
@@ -477,13 +617,16 @@ views.workout = (u, id) => {
     if (!slot) return;
     const best = bestFor(data, w.id, exId, ex.prev);
     const kg = toKg(c.w, unit);
-    const isPR = prefs.prBadges && Number.isFinite(kg) && Number.isFinite(c.r) &&
+    // bemelegítő soha nem rekord
+    const isPR = prefs.prBadges && c.t !== 'b' && Number.isFinite(kg) && Number.isFinite(c.r) &&
       (kg > best.w || (kg === best.w && c.r > best.r));
     slot.innerHTML = isPR ? `<span title="Új rekord" aria-label="Új rekord">${I.star}</span>` : '';
   }
 
   function countDone() {
-    $('[data-testid="wo-done"]').textContent = String(Object.values(log).filter((x) => x.done).length);
+    const all = Object.values(log);
+    $('[data-testid="wo-done"]').textContent = String(all.filter((x) => x.done).length);
+    $('[data-testid="wo-eff"]').textContent = String(all.filter((x) => x.done && x.t !== 'b').length);
   }
 
   // a view gyökerére kötünk, nem az #app-ra: újrarendereléskor a listener is eltűnik
@@ -502,42 +645,85 @@ views.workout = (u, id) => {
     const t = e.target;
     if (t.dataset.f !== 'done') return;
     const k = t.dataset.k;
-    log[k] = { ...cell(k), done: t.checked };
+    const c = { ...cell(k), done: t.checked };
+    log[k] = c;
     $(`[data-row="${k}"]`).classList.toggle('set--done', t.checked);
     countDone();
-    if (t.checked && prefs.autoRest) {
+    if (!t.checked) return;
+    buzz.tick(prefs.alert);
+    if (prefs.autoRest) {
       const exId = k.slice(0, k.lastIndexOf('-'));
       const ex = w.exercises.find((x) => x.id === exId);
-      if (ex) startRest(ex.rest);
+      // a bemelegítő után nem kell két perc
+      if (ex) startRest(c.t === 'b' ? Math.min(60, ex.rest) : ex.rest);
     }
   });
+
+  /* a szett száma egyben a típusjelölő: normál → B → D → K → normál */
+  $$('[data-type-btn]').forEach((btn) => btn.addEventListener('click', () => {
+    const k = btn.dataset.typeBtn;
+    const c = cell(k);
+    const next = SET_TYPES[(SET_TYPES.indexOf(c.t) + 1) % SET_TYPES.length];
+    log[k] = { ...c, t: next };
+    const no = Number(k.slice(k.lastIndexOf('-') + 1));
+    btn.dataset.t = next;
+    btn.textContent = next === 'n' ? String(no) : TYPE_LABEL[next];
+    const exId = k.slice(0, k.lastIndexOf('-'));
+    const ex = w.exercises.find((x) => x.id === exId);
+    btn.setAttribute('aria-label',
+      `${ex ? ex.name : ''} ${no}. szett típusa: ${TYPE_NAME[next]}. Koppints a jelöléshez.`);
+    $(`[data-row="${k}"]`).classList.toggle('set--warmup', next === 'b');
+    paintPR(exId, no - 1);
+    countDone();
+  }));
+
+  function fill(exId, rows) {
+    const ex = w.exercises.find((x) => x.id === exId);
+    ex.prev.forEach((_, si) => {
+      const p = rows[si] || rows[rows.length - 1];
+      if (!p) return;
+      const k = key(exId, si);
+      const shown = toDisp(p[0], unit);
+      $(`input[data-k="${k}"][data-f="w"]`).value = String(shown);
+      $(`input[data-k="${k}"][data-f="r"]`).value = String(p[1]);
+      log[k] = { ...cell(k), w: shown, r: p[1] };
+      paintPR(exId, si);
+    });
+  }
 
   $$('[data-prefill]').forEach((btn) => btn.addEventListener('click', () => {
     const exId = btn.dataset.prefill;
     const ex = w.exercises.find((x) => x.id === exId);
-    const last = lastFor(data, w.id, exId, ex.prev);
-    ex.prev.forEach((_, si) => {
-      const p = last[si] || last[last.length - 1];
-      if (!p) return;
-      const k = key(exId, si);
-      const wIn = $(`input[data-k="${k}"][data-f="w"]`);
-      const rIn = $(`input[data-k="${k}"][data-f="r"]`);
-      wIn.value = String(toDisp(p[0], unit));
-      rIn.value = String(p[1]);
-      log[k] = { ...cell(k), w: toDisp(p[0], unit), r: p[1] };
-      paintPR(exId, si);
-    });
+    fill(exId, lastFor(data, w.id, exId, ex.prev));
   }));
+
+  /* a javaslat a felső sávot adja alsó ismétlésszámmal */
+  $$('[data-sugg]').forEach((btn) => btn.addEventListener('click', () => {
+    const exId = btn.dataset.sugg;
+    const ex = w.exercises.find((x) => x.id === exId);
+    const s = suggestFor(data, w.id, ex);
+    if (!s) return;
+    fill(exId, ex.prev.map(() => [s.kg, s.reps]));
+  }));
+
+  keepAwake(prefs.wake);
 
   $('[data-finish]').addEventListener('click', () => {
     if (ticker) clearInterval(ticker);
     const sets = [];
     Object.entries(log).forEach(([k, v]) => {
       if (!v.done || !Number.isFinite(v.w) || !Number.isFinite(v.r)) return;
-      sets.push({ ex: k.slice(0, k.lastIndexOf('-')), n: Number(k.slice(k.lastIndexOf('-') + 1)), w: toKg(v.w, unit), r: v.r, done: true });
+      sets.push({
+        ex: k.slice(0, k.lastIndexOf('-')),
+        n: Number(k.slice(k.lastIndexOf('-') + 1)),
+        w: toKg(v.w, unit),
+        r: v.r,
+        t: v.t || 'n',
+        done: true
+      });
     });
     const prs = [];
-    sets.forEach((s) => {
+    sets.filter((s) => s.t !== 'b').forEach((s) => {
       const ex = w.exercises.find((x) => x.id === s.ex);
       const best = bestFor(data, w.id, s.ex, ex.prev);
       if (s.w > best.w || (s.w === best.w && s.r > best.r)) {
@@ -567,8 +753,11 @@ views.summary = (u, id) => {
   const unit = unitOf(u);
 
   const volume = s.sets.reduce((n, x) => n + x.w * x.r, 0);
+  const warmups = s.sets.filter((x) => x.t === 'b');
+  const effective = s.sets.filter((x) => x.t !== 'b');
   const contrib = {};
-  s.sets.forEach((set) => {
+  // csak a nem bemelegítő szettek adnak effektív sorozatot
+  effective.forEach((set) => {
     const ex = w.exercises.find((x) => x.id === set.ex);
     if (!ex) return;
     Object.entries(ex.contrib).forEach(([m, v]) => { contrib[m] = (contrib[m] || 0) + v; });
@@ -590,6 +779,8 @@ views.summary = (u, id) => {
       <div class="stat" style="border-color:color-mix(in srgb,${w.hex} 35%,transparent);background:color-mix(in srgb,${w.hex} 8%,transparent)">
         <dt style="color:${w.hex}">Rekord</dt><dd style="color:${w.hex}" data-testid="sum-prs">${s.prs.length}</dd></div>
     </dl>
+
+    <p class="meta num" data-testid="sum-eff">${effective.length} effektív sorozat${warmups.length ? ` · ${warmups.length} bemelegítő nem számít bele` : ''} · a volumenben minden szett benne van</p>
 
     ${s.prs.length ? `
     <section class="card">
@@ -814,7 +1005,7 @@ views.weight = (u) => {
 
 views.profile = (u) => {
   const data = store.data(u.email);
-  const prefs = data.prefs || blankData().prefs;
+  const prefs = prefsOf(data);
   let unit = unitOf(u);
   const initials = (u.name || '?').trim().slice(0, 2).toUpperCase();
   const prs = data.sessions.reduce((n, s) => n + (s.prs?.length || 0), 0);
@@ -861,8 +1052,21 @@ views.profile = (u) => {
         <h2 class="h2">Edzés közben</h2>
         ${[
           ['autoRest', 'Pihenő automatikus indítása', 'Szett pipálása után elindul a visszaszámláló'],
+          ['alert', 'Jelzés a pihenő végén', 'Rövid hang és rezgés — a telefon lehet a zsebben is'],
+          ['wake', 'Kijelző ébren tartása', 'Két szett között ne aludjon el a telefon']
+        ].map(([k, label, hint]) => `
+        <label class="pref" for="p-${k}">
+          <span style="min-width:0">${label}<span class="meta" style="display:block;margin-top:2px">${hint}</span></span>
+          <input class="sw" id="p-${k}" name="${k}" type="checkbox" data-pref="${k}" ${prefs[k] ? 'checked' : ''} data-testid="pf-${k}">
+        </label>`).join('')}
+      </section>
+
+      <section class="card">
+        <h2 class="h2">Számok és javaslatok</h2>
+        ${[
           ['prBadges', 'Rekord jelzése', 'Csillag a soron, ha felülmúlod az eddigi legjobbat'],
-          ['prefill', 'Előző értékek előtöltése', '„Előző” gomb a gyakorlat fejlécében']
+          ['prefill', 'Előző értékek előtöltése', '„Előző” gomb a gyakorlat fejlécében'],
+          ['progression', 'Progressziójavaslat', '+2,5 kg, ha múltkor minden szett a sáv tetején volt']
         ].map(([k, label, hint]) => `
         <label class="pref" for="p-${k}">
           <span style="min-width:0">${label}<span class="meta" style="display:block;margin-top:2px">${hint}</span></span>
@@ -921,11 +1125,11 @@ views.profile = (u) => {
 
 function exportCsv(u) {
   const data = store.data(u.email);
-  const rows = [['tipus', 'datum', 'edzes', 'gyakorlat', 'szett', 'suly_kg', 'ismetles']];
+  const rows = [['tipus', 'datum', 'edzes', 'gyakorlat', 'szett', 'szettipus', 'suly_kg', 'ismetles']];
   data.sessions.forEach((s) => s.sets.forEach((x) => {
-    rows.push(['szett', s.on, s.workout, x.ex, x.n, x.w, x.r]);
+    rows.push(['szett', s.on, s.workout, x.ex, x.n, x.t || 'n', x.w, x.r]);
   }));
-  data.totals.forEach((t) => rows.push(['ossz_suly', t.on, '', t.source, '', t.kg, '']));
+  data.totals.forEach((t) => rows.push(['ossz_suly', t.on, '', t.source, '', '', t.kg, '']));
   const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
   const url = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
   const a = document.createElement('a');
@@ -1047,6 +1251,9 @@ function render() {
   const view = views[name];
   if (!view) { location.hash = '#/split'; return; }
 
+  // a kijelző csak a naplózó képernyőn marad ébren
+  if (name !== 'workout') letSleep();
+
   view(u, parts[1]);
   window.scrollTo(0, 0);
 
@@ -1068,3 +1275,11 @@ seedDemo().then(() => {
   render();
   document.body.dataset.ready = '1';
 });
+
+/* offline működés: a service worker a vázat és a betűket tartja meg */
+const localHost = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || localHost)) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => { /* offline mód nélkül is megy */ });
+  });
+}

@@ -25,9 +25,37 @@ index.html             a váz és a lenti navigáció
 assets/app.css         tokenek, 4/8-as rács, hatlépcsős típusskála
 assets/data.js         a split: gyakorlatok, szettek, pihenők, izomhozzájárulás
 assets/app.js          router, localStorage, a kilenc képernyő
+sw.js                  service worker: offline működés
 manifest.webmanifest   kezdőképernyőre tehető (PWA)
-tests/forge.spec.js    Playwright: 19 teszt, három eszközön
+tests/forge.spec.js    Playwright-runnerhez
+tools/check.mjs        ugyanaz runner nélkül, a Playwright könyvtárán
+tools/serve.mjs        statikus kiszolgáló, csak Node-beépítőkkel
 ```
+
+## Naplózás közben
+
+- **Szettípus** — a szett számára koppintva: normál → `B` bemelegítő → `D` drop →
+  `K` kudarcig. A bemelegítő nem számít effektív sorozatba, nem lehet rekord, és
+  rövidebb pihenőt indít (max. 60 s).
+- **Pihenő** — a szett pipálásakor indul, a végén három rövid hang és rezgés.
+- **Rekord** — csillag a soron, ha a szett felülmúlja az eddigi legjobbat.
+- **Előző / Javaslat** — az „Előző" a múltkori számokat írja be. Ha múltkor minden
+  szett elérte az ismétléssáv felső értékét, megjelenik a **+2,5 kg javaslat**, és a
+  „Kitölt" be is írja a sáv alsó ismétlésszámával.
+- **Kijelző** — edzés közben ébren marad (Wake Lock), a naplózóból kilépve elengedi.
+
+A rezgés, a hang, a kijelző, a rekordjelzés, az előtöltés és a javaslat külön-külön
+kikapcsolható a profilban. A rezgés Androidon működik; iOS Safari nem támogatja a
+`navigator.vibrate`-et, ott a hang marad.
+
+## Offline
+
+A `sw.js` cache-first módon tartja a vázat (HTML, CSS, JS, ikon, manifest), a Google
+Fonts fájljait pedig stale-while-revalidate módon. Telepítve, repülőgép-módban is
+elindul, és mivel a napló `localStorage`-ban van, semmi nem áll meg.
+
+Ha a váz fájljai változnak, **emeld a `VERSION`-t a `sw.js` elején** — új érték = új
+cache, a régi az aktiválásnál törlődik.
 
 ## Futtatás
 
@@ -51,10 +79,14 @@ npm run check
 ```
 
 Mindkettő iPhone 13, Pixel 7 és desktop Chrome profilon megy végig: belépés és rossz
-jelszó, a négy edzés szettszáma, szettrögzítés és pihenő, rekordjelzés, előtöltés,
-összegző, izomcsoport-számok (7 és 30 napra), az össz súly különállása, regisztráció,
-profilmentés, kg/lbs átszámítás, a fióktörlés teljes útja, valamint a vízszintes
+jelszó, a négy edzés szettszáma, szettrögzítés és pihenő, szettípus-jelölés, a
+bemelegítő kizárása az effektív sorozatból, rekordjelzés, előtöltés,
+progressziójavaslat, offline indulás a service workerrel, összegző, izomcsoport-számok
+(7 és 30 napra), az össz súly különállása, regisztráció, profilmentés és a beállítások
+megmaradása, kg/lbs átszámítás, a fióktörlés teljes útja, valamint a vízszintes
 csúszás, a 44 pixeles érintőfelületek és a konzolhibák ellenőrzése.
+
+Utolsó futás: **34/34 rendben**.
 
 A `npm run check` akkor is megy, ha a Playwright test-runner nem tud elindulni a
 környezetben (sandbox, zárt CI) — csak böngészőt indít, saját kiszolgálóval.

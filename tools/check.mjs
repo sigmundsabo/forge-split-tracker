@@ -170,6 +170,124 @@ async function fullSuite() {
     eq(await page.locator('input[name="r_chestpress_1"]').inputValue(), '10', 'előtöltött ismétlés');
   });
 
+  await check('a szett száma jelölhető: normál → B → D → K → normál', async (page) => {
+    await login(page);
+    await page.getByTestId('card-upper').click();
+    const btn = page.getByTestId('type-pullover-1');
+    eq(await btn.innerText(), '1', 'kezdő felirat');
+    for (const [label, name] of [['B', 'bemelegítő'], ['D', 'drop'], ['K', 'kudarcig']]) {
+      await btn.click();
+      eq((await btn.innerText()).trim(), label, `${name} felirat`);
+      if (!(await btn.getAttribute('aria-label')).includes(name)) {
+        throw new Error(`az aria-label nem mondja ki: ${name}`);
+      }
+    }
+    await btn.click();
+    eq((await btn.innerText()).trim(), '1', 'vissza normálra');
+  });
+
+  await check('a bemelegítő nem számít effektív sorozatba és nem lehet rekord', async (page) => {
+    await login(page);
+    await page.getByTestId('card-upper').click();
+    await page.locator('input[name="w_pullover_1"]').fill('50');
+    await page.locator('input[name="r_pullover_1"]').fill('10');
+    await page.locator('#d_pullover-1').check();
+
+    await waitText(page.getByTestId('wo-done'), /^1$/, 'kész szettek');
+    await waitText(page.getByTestId('wo-eff'), /^1$/, 'effektív szettek');
+    await assertVisible(page.locator('[data-pr="pullover-1"] [aria-label="Új rekord"]'), 'rekordjel');
+
+    await page.getByTestId('type-pullover-1').click(); // → bemelegítő
+    await waitText(page.getByTestId('wo-done'), /^1$/, 'kész szettek bemelegítőként');
+    await waitText(page.getByTestId('wo-eff'), /^0$/, 'effektív szettek bemelegítőként');
+    await assertHidden(page.locator('[data-pr="pullover-1"] [aria-label="Új rekord"]'), 'rekordjel');
+  });
+
+  await check('az összegző kiírja az effektív sorozatot és a bemelegítőt', async (page) => {
+    await login(page);
+    await page.getByTestId('card-upper').click();
+    await page.locator('input[name="w_pullover_1"]').fill('50');
+    await page.locator('input[name="r_pullover_1"]').fill('10');
+    await page.locator('#d_pullover-1').check();
+    await page.getByRole('button', { name: 'Kihagy' }).click();
+
+    await page.locator('input[name="w_pullover_2"]').fill('20');
+    await page.locator('input[name="r_pullover_2"]').fill('8');
+    await page.getByTestId('type-pullover-2').click(); // → bemelegítő
+    await page.locator('#d_pullover-2').check();
+    await page.getByRole('button', { name: 'Kihagy' }).click();
+
+    await page.getByTestId('finish').click();
+    await waitUrl(page, /#\/summary\/upper$/);
+    await waitText(page.getByTestId('sum-sets'), /^2$/, 'rögzített szett');
+    await waitText(page.getByTestId('sum-prs'), /^1$/, 'rekordok száma');
+    await waitText(page.getByTestId('sum-eff'), '1 effektív sorozat', 'effektív sor');
+    await waitText(page.getByTestId('sum-eff'), '1 bemelegítő nem számít bele', 'bemelegítő sor');
+  });
+
+  await check('progressziójavaslat jelenik meg, ha a sáv teteje megvolt', async (page) => {
+    await login(page);
+    await page.getByTestId('card-upper').click();
+    // a lateral raise múltkor 3×10 volt 10 kg-mal, a sáv 8–10 → +2,5 kg
+    await waitText(page.getByTestId('sugg-lateral'), '12,5 kg', 'javasolt súly');
+    await waitText(page.getByTestId('sugg-lateral'), 'mind a 3 szett 10 ismétlés', 'indoklás');
+    // a pullover nem érte el a sáv tetejét minden szettben
+    await assertHidden(page.getByTestId('sugg-pullover'), 'pullover javaslat');
+
+    await page.getByTestId('sugg-fill-lateral').click();
+    eq(await page.locator('input[name="w_lateral_1"]').inputValue(), '12.5', 'kitöltött súly');
+    eq(await page.locator('input[name="r_lateral_1"]').inputValue(), '8', 'kitöltött ismétlés');
+    eq(await page.locator('input[name="w_lateral_3"]').inputValue(), '12.5', 'harmadik szett súlya');
+  });
+
+  await check('a javaslat kikapcsolható a profilban', async (page) => {
+    await login(page);
+    await page.getByTestId('nav-profile').click();
+    await page.getByTestId('pf-progression').uncheck();
+    await page.getByTestId('pf-save').click();
+    await waitText(page.getByTestId('pf-status'), 'Mentve', 'mentés jelzés');
+
+    await page.getByTestId('nav-split').click();
+    await page.getByTestId('card-upper').click();
+    await assertHidden(page.getByTestId('sugg-lateral'), 'javaslat kikapcsolva');
+  });
+
+  await check('az új beállítások megmaradnak mentés után', async (page) => {
+    await login(page);
+    await page.getByTestId('nav-profile').click();
+    for (const id of ['pf-alert', 'pf-wake', 'pf-progression']) {
+      if (!(await page.getByTestId(id).isChecked())) throw new Error(`${id} nincs bekapcsolva alapból`);
+    }
+    await page.getByTestId('pf-alert').uncheck();
+    await page.getByTestId('pf-wake').uncheck();
+    await page.getByTestId('pf-save').click();
+    await waitText(page.getByTestId('pf-status'), 'Mentve', 'mentés jelzés');
+
+    await page.goto(`${BASE}/#/profile`);
+    await assertVisible(page.getByTestId('pf-alert'), 'jelzés kapcsoló');
+    eq(await page.getByTestId('pf-alert').isChecked(), false, 'jelzés kikapcsolva maradt');
+    eq(await page.getByTestId('pf-wake').isChecked(), false, 'kijelző kapcsoló kikapcsolva maradt');
+    eq(await page.getByTestId('pf-progression').isChecked(), true, 'javaslat bekapcsolva maradt');
+  });
+
+  await check('a service worker aktiválódik, és offline is elindul az app', async (page) => {
+    await login(page);
+    const active = await page.evaluate(() => Promise.race([
+      navigator.serviceWorker.ready.then((r) => Boolean(r && (r.active || r.installing))),
+      new Promise((res) => setTimeout(() => res(false), 8000))
+    ]));
+    if (!active) throw new Error('a service worker nem aktiválódott');
+    await wait(700);
+
+    await page.context().setOffline(true);
+    await page.reload();
+    await assertVisible(page.getByTestId('split-meta'), 'split fejléc offline');
+    await waitText(page.getByTestId('split-meta'), '77 szett', 'offline tartalom');
+    await page.getByTestId('card-upper').click();
+    await waitText(page.getByTestId('wo-meta'), '23 szett', 'naplózó offline');
+    await page.context().setOffline(false);
+  });
+
   await check('az edzés befejezése összegzőt ad, a rekorddal együtt', async (page) => {
     await login(page);
     await page.getByTestId('card-upper').click();

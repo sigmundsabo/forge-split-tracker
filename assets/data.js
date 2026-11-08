@@ -32,7 +32,7 @@ export const WORKOUTS = [
       { id: 'ohp',       name: 'Vállból nyomás',     scheme: '3×6–8',   rest: 120, contrib: { vall: 1, tricepsz: 0.5 },           prev: [[40, 8], [40, 7], [37.5, 7]] },
       { id: 'bicep',     name: 'Bicep curl',         scheme: '3×8–10',  rest: 60,  contrib: { bicepsz: 1 },                       prev: [[16, 10], [16, 9], [14, 10]] },
       { id: 'shrug',     name: 'Csuklya',            scheme: '3×10–12', rest: 75,  contrib: { trapez: 1 },                        prev: [[70, 12], [70, 11], [65, 12]] },
-      { id: 'lateral',   name: 'Lateral raise',      scheme: '3×8–10',  rest: 60,  contrib: { vall: 1 },                          prev: [[10, 10], [10, 9], [9, 10]] },
+      { id: 'lateral',   name: 'Lateral raise',      scheme: '3×8–10',  rest: 60,  contrib: { vall: 1 },                          prev: [[10, 10], [10, 10], [10, 10]] },
       { id: 'reverse',   name: 'Reverse curl',       scheme: '2×10–12', rest: 60,  contrib: { bicepsz: 1 },                       prev: [[12, 12], [12, 10]] },
       { id: 'triext',    name: 'Triceps extension',  scheme: '3×8–10',  rest: 60,  contrib: { tricepsz: 1 },                      prev: [[30, 10], [30, 9], [27.5, 9]] }
     ]
