@@ -11,6 +11,11 @@
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
 
 [[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    content-type = "application/manifest+json; charset=utf-8"
+
+[[headers]]
   for = "/index.html"
   [headers.values]
     cache-control = "public, max-age=0, must-revalidate"

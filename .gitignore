@@ -4,3 +4,4 @@ playwright-report/
 .netlify/
 .DS_Store
 *.log
+dist/
