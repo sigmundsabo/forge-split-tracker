@@ -1,0 +1,15 @@
+{
+  "name": "FORGE — edzés split tracker",
+  "short_name": "FORGE",
+  "description": "Négy edzés, egy split. Súly, ismétlés, pihenő, rekordok és izomcsoport-tracker.",
+  "lang": "hu",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#09090A",
+  "theme_color": "#09090A",
+  "icons": [
+    { "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
