@@ -5,9 +5,10 @@
   "description": "FORGE — edzés split tracker: négy edzés, súly- és ismétlésnaplózás, pihenőidő, rekordjelzés, izomcsoport-tracker. Statikus, telefonra optimalizált frontend.",
   "type": "module",
   "scripts": {
-    "dev": "npx --yes http-server . -p 4321 -c-1 --silent",
+    "dev": "node tools/serve.mjs 4321 .",
     "test": "playwright test",
-    "test:ui": "playwright test --ui"
+    "test:ui": "playwright test --ui",
+    "check": "node tools/check.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.49.1"

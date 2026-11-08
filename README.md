@@ -30,13 +30,25 @@ Majd nyisd meg: http://localhost:4321
 
 ## Tesztek
 
+Két úton fut ugyanaz a kör — a Playwright test-runnerrel, és runner nélkül,
+a Playwright könyvtári API-ján:
+
 ```bash
 npm test
 ```
 
-Playwright iPhone 13, Pixel 7 és desktop Chrome profilon futtat: belépés, naplózás,
-pihenő, rekordjelzés, előtöltés, izomcsoport-számok, fióktörlés, valamint
-a vízszintes csúszás, a 44 pixeles érintőfelületek és a konzolhibák ellenőrzése.
+```bash
+npm run check
+```
+
+Mindkettő iPhone 13, Pixel 7 és desktop Chrome profilon megy végig: belépés és rossz
+jelszó, a négy edzés szettszáma, szettrögzítés és pihenő, rekordjelzés, előtöltés,
+összegző, izomcsoport-számok (7 és 30 napra), az össz súly különállása, regisztráció,
+profilmentés, kg/lbs átszámítás, a fióktörlés teljes útja, valamint a vízszintes
+csúszás, a 44 pixeles érintőfelületek és a konzolhibák ellenőrzése.
+
+A `npm run check` akkor is megy, ha a Playwright test-runner nem tud elindulni a
+környezetben (sandbox, zárt CI) — csak böngészőt indít, saját kiszolgálóval.
 
 ## A split
 

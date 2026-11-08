@@ -679,10 +679,10 @@ views.muscles = (u) => {
         <button class="chip" type="button" data-range="30" aria-pressed="${range === 30}" data-testid="range-30">30 nap</button>
       </div>
     </div>
-    <p class="meta">Effektív sorozat — a célsáv ${hu(min, 0)}–${hu(max, 0)} ${range === 30 ? 'harminc' : 'hét'} napra. ${lowCount ? `${lowCount} csoport a sáv alatt.` : 'Minden csoport a sávban.'}</p>
+    <p class="meta">Effektív sorozat — a célsáv ${hu(min, 0)}–${hu(max, 0)} ${range === 30 ? '30 napra' : 'egy hétre'}. ${lowCount ? `${lowCount} csoport a sáv alatt.` : 'Minden csoport a sávban.'}</p>
 
     <section class="card">
-      <svg viewBox="0 0 360 290" width="100%" height="auto" role="img" aria-label="Izomcsoportok radardiagramja">
+      <svg viewBox="0 0 360 290" width="100%" role="img" aria-label="Izomcsoportok radardiagramja" style="display:block;height:auto">
         <g fill="none" stroke="#1E1E22" stroke-width="1">
           <polygon points="${ring(96)}"/><polygon points="${ring(72)}"/><polygon points="${ring(48)}"/><polygon points="${ring(24)}"/>
         </g>
@@ -864,7 +864,7 @@ views.profile = (u) => {
           ['prBadges', 'Rekord jelzése', 'Csillag a soron, ha felülmúlod az eddigi legjobbat'],
           ['prefill', 'Előző értékek előtöltése', '„Előző” gomb a gyakorlat fejlécében']
         ].map(([k, label, hint]) => `
-        <label for="p-${k}" style="display:flex;align-items:center;justify-content:space-between;gap:var(--s3);cursor:pointer">
+        <label class="pref" for="p-${k}">
           <span style="min-width:0">${label}<span class="meta" style="display:block;margin-top:2px">${hint}</span></span>
           <input class="sw" id="p-${k}" name="${k}" type="checkbox" data-pref="${k}" ${prefs[k] ? 'checked' : ''} data-testid="pf-${k}">
         </label>`).join('')}

@@ -14,9 +14,9 @@ export default defineConfig({
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } }
   ],
   webServer: {
-    command: 'npx --yes http-server . -p 4321 -c-1 --silent',
+    command: 'node tools/serve.mjs 4321 .',
     url: 'http://127.0.0.1:4321',
     reuseExistingServer: true,
-    timeout: 60_000
+    timeout: 30_000
   }
 });

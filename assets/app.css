@@ -263,6 +263,16 @@ select:focus-visible,
 .chk { width: 22px; height: 22px; margin: 0; accent-color: var(--accent); cursor: pointer; }
 .sw { width: 24px; height: 24px; margin: 0; accent-color: var(--accent); cursor: pointer; }
 
+/* a kapcsolósor egésze az érintőfelület, ezért legalább 48 px magas */
+.pref {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  min-height: 48px;
+  cursor: pointer;
+}
+
 .danger-btn {
   display: flex;
   align-items: center;
@@ -383,6 +393,9 @@ select:focus-visible,
   border-radius: var(--r-sm);
   cursor: pointer;
 }
+
+/* a .rest display:flex-je erősebb a UA [hidden] szabályánál, ezért kell ez a sor */
+.rest[hidden] { display: none; }
 
 .rest {
   position: sticky;
